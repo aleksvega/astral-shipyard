@@ -19,6 +19,8 @@ export interface ProceduralTextureSet {
   allodRockMap: THREE.Texture;
   brassPatinaMap: THREE.Texture;
   leagueLacquerMap: THREE.Texture;
+  orkScrapMap: THREE.Texture;
+  goblinBoneMap: THREE.Texture;
   surfaces: SurfaceMaps;
   dispose: () => void;
 }
@@ -244,6 +246,72 @@ export function createProceduralTextures(
   leagueLacquerMap.wrapS = leagueLacquerMap.wrapT = THREE.RepeatWrapping;
   leagueLacquerMap.anisotropy = maxAnisotropy;
 
+  // 7. Орки: ржавая сталь внахлёст, шов — светлый валик сварки поверх стыка
+  const [scrapC, scrapCtx] = createCanvas(256);
+  scrapCtx.fillStyle = '#4a4238';
+  scrapCtx.fillRect(0, 0, 256, 256);
+  for (let y = 0; y < 256; y += 84) {
+    for (let x = 0; x < 256; x += 84) {
+      const tone = 62 + ((x * 7 + y * 13) % 34);
+      scrapCtx.fillStyle = `rgb(${tone + 18},${tone + 6},${tone - 12})`;
+      scrapCtx.fillRect(x + 3, y + 2, 78, 80);
+      scrapCtx.fillStyle = 'rgba(128, 62, 26, 0.35)';
+      for (let k = 0; k < 12; k++) {
+        scrapCtx.beginPath();
+        scrapCtx.ellipse(x + 6 + ((k * 23) % 70), y + 6 + ((k * 31) % 70), 5 + (k % 4), 3 + (k % 3), k, 0, Math.PI * 2);
+        scrapCtx.fill();
+      }
+    }
+  }
+  scrapCtx.strokeStyle = '#c8b184';
+  scrapCtx.lineWidth = 4;
+  for (let y = 84; y < 256; y += 84) {
+    scrapCtx.beginPath();
+    for (let x = 0; x <= 256; x += 6) scrapCtx.lineTo(x, y + Math.sin(x * 0.5) * 1.6);
+    scrapCtx.stroke();
+  }
+  for (let x = 84; x < 256; x += 84) {
+    scrapCtx.beginPath();
+    for (let y = 0; y <= 256; y += 6) scrapCtx.lineTo(x + Math.cos(y * 0.5) * 1.6, y);
+    scrapCtx.stroke();
+  }
+  const orkScrapMap = new THREE.CanvasTexture(scrapC);
+  orkScrapMap.colorSpace = THREE.SRGBColorSpace;
+  orkScrapMap.wrapS = orkScrapMap.wrapT = THREE.RepeatWrapping;
+  orkScrapMap.anisotropy = maxAnisotropy;
+
+  // 8. Гоблины: кость с порами и прожилками, тёплый белок с бурыми крапинами
+  const [boneC, boneCtx] = createCanvas(256);
+  boneCtx.fillStyle = '#d9d0b6';
+  boneCtx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 180; i++) {
+    const x = (i * 71 + 17) % 256;
+    const y = (i * 43 + 51) % 256;
+    boneCtx.fillStyle = `rgba(108, 84, 54, ${0.12 + (i % 5) * 0.06})`;
+    boneCtx.beginPath();
+    boneCtx.arc(x, y, 1 + (i % 4), 0, Math.PI * 2);
+    boneCtx.fill();
+  }
+  boneCtx.strokeStyle = 'rgba(92, 70, 44, 0.45)';
+  boneCtx.lineWidth = 1.4;
+  for (let i = 0; i < 14; i++) {
+    boneCtx.beginPath();
+    boneCtx.moveTo((i * 91) % 256, (i * 57) % 256);
+    boneCtx.bezierCurveTo(
+      (i * 37 + 40) % 256,
+      (i * 83 + 20) % 256,
+      (i * 19 + 120) % 256,
+      (i * 61 + 90) % 256,
+      (i * 29 + 200) % 256,
+      (i * 47 + 60) % 256,
+    );
+    boneCtx.stroke();
+  }
+  const goblinBoneMap = new THREE.CanvasTexture(boneC);
+  goblinBoneMap.colorSpace = THREE.SRGBColorSpace;
+  goblinBoneMap.wrapS = goblinBoneMap.wrapT = THREE.RepeatWrapping;
+  goblinBoneMap.anisotropy = maxAnisotropy;
+
   const surfaces = createSurfaceMaps(maxAnisotropy);
 
   // Настоящие сканы сильнее процедурки: подменяем карты, если набор пришёл.
@@ -268,6 +336,8 @@ export function createProceduralTextures(
     pack?.metal?.color ?? brassPatinaMap,
     astralSailMap,
     leagueLacquerMap,
+    orkScrapMap,
+    goblinBoneMap,
     allodRockMap,
   ]) {
     texture.userData.mimeType = 'image/jpeg';
@@ -282,6 +352,8 @@ export function createProceduralTextures(
     allodRockMap,
     brassPatinaMap: pack?.metal?.color ?? brassPatinaMap,
     leagueLacquerMap,
+    orkScrapMap,
+    goblinBoneMap,
     surfaces,
     dispose: () => {
       leagueWoodMap.dispose();
@@ -292,6 +364,8 @@ export function createProceduralTextures(
       allodRockMap.dispose();
       brassPatinaMap.dispose();
       leagueLacquerMap.dispose();
+      orkScrapMap.dispose();
+      goblinBoneMap.dispose();
       surfaces.dispose();
     },
   };

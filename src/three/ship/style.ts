@@ -21,7 +21,7 @@ export interface ShipStyle {
   /** Основной тон корпуса: лак, сталь, смола. */
   hullColor: number;
   /** Какой набор текстур ложится на обшивку. */
-  hullTexture: 'lacquer' | 'steel';
+  hullTexture: 'lacquer' | 'steel' | 'scrap' | 'bone';
   deckColor: number;
   /** Латунь/сталь отделки. */
   trimColor: number;
@@ -161,7 +161,7 @@ export const ORK_STYLE: ShipStyle = {
   id: 'ork',
   school: 'scrap',
   hullColor: 0xa06a4a,
-  hullTexture: 'lacquer',
+  hullTexture: 'scrap',
   deckColor: 0x6b4a34,
   trimColor: 0x8d8272,
   trimMetalness: 0.6,
@@ -204,7 +204,7 @@ export const GOBLIN_STYLE: ShipStyle = {
   id: 'goblin',
   school: 'spike',
   hullColor: 0x8f9c6a,
-  hullTexture: 'lacquer',
+  hullTexture: 'bone',
   deckColor: 0x46523a,
   trimColor: 0xb9c07a,
   trimMetalness: 0.5,

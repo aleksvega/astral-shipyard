@@ -8,24 +8,34 @@ import type { ShipMaterials, ShipStyle } from './style';
  */
 export function makeMaterials(style: ShipStyle, textures: ProceduralTextureSet): ShipMaterials {
   const steel = style.hullTexture === 'steel';
-  const hullMap = steel ? textures.empireSteelMap : textures.leagueLacquerMap;
   const surfaces = textures.surfaces;
+  // Школа задаёт поверхность борта: лак Лиги, плиты Империи, сварка Орков,
+  // кость Гоблинов. Палитра поверх неё только перекрашивает канал.
+  const hull =
+    style.hullTexture === 'scrap'
+      ? { map: textures.orkScrapMap, normal: surfaces.scrapNormal, rough: surfaces.scrapRough, metalness: 0.62, emissive: 0x000000, emissiveIntensity: 0 }
+      : style.hullTexture === 'bone'
+        ? { map: textures.goblinBoneMap, normal: surfaces.boneNormal, rough: surfaces.boneRough, metalness: 0.08, emissive: 0x000000, emissiveIntensity: 0 }
+        : steel
+          ? { map: textures.empireSteelMap, normal: surfaces.steelNormal, rough: surfaces.steelRough, metalness: 0.75, emissive: 0x35506b, emissiveIntensity: 0.9 }
+          : { map: textures.leagueLacquerMap, normal: surfaces.lacquerNormal, rough: surfaces.lacquerRough, metalness: 0.15, emissive: 0x000000, emissiveIntensity: 0 };
 
   return {
     hull: new THREE.MeshStandardMaterial({
+      name: `hull:${style.hullTexture}`,
       color: style.hullColor,
-      map: hullMap,
-      normalMap: steel ? surfaces.steelNormal : surfaces.lacquerNormal,
+      map: hull.map,
+      normalMap: hull.normal,
       normalScale: new THREE.Vector2(steel ? 0.55 : 0.7, steel ? 0.55 : 0.7),
-      roughnessMap: steel ? surfaces.steelRough : surfaces.lacquerRough,
+      roughnessMap: hull.rough,
       roughness: steel ? 0.8 : 0.85,
-      metalness: steel ? 0.75 : 0.15,
+      metalness: hull.metalness,
       // Лофт — открытая оболочка (киль без палубы), односторонний материал
       // просвечивает изнутри: снаружи видно воду сквозь борт
       side: THREE.DoubleSide,
       // Гранёный имперский корпус без парусов иначе читается чёрной плитой
-      emissive: new THREE.Color(style.school === 'wedge' ? 0x35506b : 0x000000),
-      emissiveIntensity: style.school === 'wedge' ? 0.9 : 0,
+      emissive: new THREE.Color(hull.emissive),
+      emissiveIntensity: hull.emissiveIntensity,
     }),
     deck: new THREE.MeshStandardMaterial({
       color: style.deckColor,
