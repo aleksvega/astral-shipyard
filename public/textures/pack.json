@@ -1,0 +1,9 @@
+{
+  "base": "",
+  "note": "CC0-сканы ambientCG; отсутствие файла не ломает сборку — включается процедурка",
+  "sets": {
+    "plates": { "color": "plates/color.jpg", "normal": "plates/normal.jpg", "rough": "plates/rough.jpg" },
+    "wood": { "color": "wood/color.jpg", "normal": "wood/normal.jpg", "rough": "wood/rough.jpg" },
+    "metal": { "color": "metal/color.jpg", "normal": "metal/normal.jpg", "rough": "metal/rough.jpg" }
+  }
+}

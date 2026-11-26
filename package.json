@@ -1,0 +1,55 @@
+{
+  "name": "astral-shipyard",
+  "version": "0.1.0",
+  "description": "Детерминированный астральный парусник из описания: геометрия, смета, палитра, PNG и GLB. Движок «Астрального Рубежа».",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "three",
+    "procedural",
+    "ships",
+    "sailing",
+    "glb",
+    "generator"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./textures": {
+      "types": "./dist/three/textures.d.ts",
+      "import": "./dist/three/textures.js"
+    }
+  },
+  "files": [
+    "dist",
+    "docs",
+    "public",
+    "tools",
+    "README.md",
+    "LICENSE",
+    "SUPPORT.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "ship": "node tools/ship-cli.mjs"
+  },
+  "peerDependencies": {
+    "three": ">=0.160.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.11",
+    "@types/three": "^0.187.0",
+    "esbuild": "^0.25.0",
+    "playwright-core": "^1.50.0",
+    "three": "^0.187.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
