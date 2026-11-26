@@ -16,10 +16,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./textures": {
-      "types": "./dist/three/textures.d.ts",
-      "import": "./dist/three/textures.js"
     }
   },
   "files": [
@@ -32,10 +28,19 @@
     "SUPPORT.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && esbuild src/index.ts --bundle --format=esm --platform=browser --target=es2020 --external:three --outfile=dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsx --test test/*.test.ts",
-    "ship": "node tools/ship-cli.mjs"
+    "ship": "node tools/ship-cli.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aleksvega/astral-shipyard.git"
+  },
+  "homepage": "https://github.com/aleksvega/astral-shipyard#readme",
+  "bugs": {
+    "url": "https://github.com/aleksvega/astral-shipyard/issues"
   },
   "peerDependencies": {
     "three": ">=0.160.0"

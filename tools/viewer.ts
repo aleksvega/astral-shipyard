@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
-import { createProceduralTextures } from '../src/three/textures';
-import { loadTexturePack } from '../src/three/texture-pack';
-import { generateShip } from '../src/three/ship/generate';
-import { paletteFromHints } from '../src/three/ship/engine/paint';
-import type { ShipBlueprint } from '../src/three/ship/engine/spec';
-import { parseShipText } from '../src/three/ship/engine/text';
+import { createProceduralTextures } from '../lib/three/textures';
+import { loadTexturePack } from '../lib/three/texture-pack';
+import { generateShip } from '../lib/three/ship/generate';
+import { paletteFromHints } from '../lib/three/ship/engine/paint';
+import type { ShipBlueprint } from '../lib/three/ship/engine/spec';
+import { parseShipText } from '../lib/three/ship/engine/text';
 
 /**
  * Голова без человека: страница получает задание в window.__SHIP_JOB__, собирает

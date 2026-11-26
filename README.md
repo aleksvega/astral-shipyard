@@ -13,15 +13,17 @@ import { generateShip, createProceduralTextures, parseShipText } from 'astral-sh
 
 const parsed = parseShipText('лигийский галеон, алый, прямые паруса, три мачты');
 const ship = generateShip({
-  faction: 'league',
-  classId: 'galleon',
-  seed: 5,
-  blueprint: parsed?.build,
-  textures: createProceduralTextures(4),
+  faction: parsed?.faction ?? 'league',
+  classId: parsed?.classId,
+  seed: parsed?.seed ?? 5,
+  blueprint: parsed,                       // плоский разбор: мачты, паруса, краски
+  textures: createProceduralTextures(4),   // нужен DOM/Canvas
 });
 
 console.log(ship.dna.signature);
 ```
+
+`parseShipText` и смета работают в чистом Node. Геометрия и карты требуют Canvas: браузер, воркер или `node-canvas`. Для картинок и GLB без браузера есть CLI.
 
 ## Зачем это, если есть генераторы кораблей
 

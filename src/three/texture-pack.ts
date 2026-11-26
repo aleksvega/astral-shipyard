@@ -30,16 +30,22 @@ export const PACK_SETS = ['plates', 'wood', 'metal'] as const;
 
 function loadTexture(url: string, srgb: boolean, anisotropy: number): Promise<THREE.Texture> {
   return new Promise((resolve, reject) => {
+    // Без таймаута битый или медленный файл держит всю сцену на процедурке молча
+    const timer = setTimeout(() => reject(new Error(`таймаут текстуры ${url}`)), 8000);
     new THREE.TextureLoader().load(
       url,
       (texture) => {
+        clearTimeout(timer);
         texture.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
         texture.anisotropy = anisotropy;
         resolve(texture);
       },
       undefined,
-      () => reject(new Error(`не загрузилась текстура ${url}`)),
+      () => {
+        clearTimeout(timer);
+        reject(new Error(`не загрузилась текстура ${url}`));
+      },
     );
   });
 }
