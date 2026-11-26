@@ -94,6 +94,7 @@ async function main() {
     height: height || 800,
     background: args.background === 'none' ? null : args.background,
     glb: Boolean(args.glb),
+    texSize: args.tex ? Number(args.tex) : 1024,
     packManifest: packManifest(),
   };
 

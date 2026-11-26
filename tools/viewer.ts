@@ -23,6 +23,8 @@ interface ShipJob {
   view?: 'three-quarter' | 'side' | 'front' | 'top';
   background?: string | null;
   glb?: boolean;
+  /** Сторона карт в GLB: 1024 по умолчанию, 512/256 — лёгкий файл для веба. */
+  texSize?: number;
   packManifest?: string;
 }
 
@@ -186,7 +188,7 @@ async function boot(): Promise<void> {
       report.glbError = String(error);
       done();
     },
-    { binary: true },
+    { binary: true, maxTextureSize: job.texSize ?? 1024 },
   );
 }
 

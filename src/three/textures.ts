@@ -260,6 +260,19 @@ export function createProceduralTextures(
     texture?.repeat.set(2, 2);
   }
 
+  // Цвет отдаём в JPEG: карты нормалей и шероховатости остаются PNG,
+  // иначе артефакты сжатия лезут в рельеф обшивки
+  for (const texture of [
+    pack?.plates?.color ?? empireSteelMap,
+    pack?.wood?.color ?? leagueWoodMap,
+    pack?.metal?.color ?? brassPatinaMap,
+    astralSailMap,
+    leagueLacquerMap,
+    allodRockMap,
+  ]) {
+    texture.userData.mimeType = 'image/jpeg';
+  }
+
   return {
     leagueWoodMap: pack?.wood?.color ?? leagueWoodMap,
     leagueWoodBump,
