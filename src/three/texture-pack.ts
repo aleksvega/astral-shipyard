@@ -83,27 +83,47 @@ export async function loadTexturePack(
   manifestUrl = '/textures/pack.json',
   anisotropy = 4,
 ): Promise<TexturePack | null> {
-  try {
-    const response = await fetch(manifestUrl, { cache: 'force-cache' });
-    if (!response.ok) return null;
-    const manifest = (await response.json()) as { base?: string; sets?: Record<string, PackSource> };
-    if (!manifest.sets) return null;
-    const root = new URL(manifest.base ?? '', new URL(manifestUrl, window.location.href));
-    const resolve = (path: string): string => new URL(path, root).href;
-    const sources: Partial<Record<(typeof PACK_SETS)[number], PackSource>> = {};
-    for (const name of PACK_SETS) {
-      const set = manifest.sets[name];
-      if (!set) continue;
-      sources[name] = {
-        color: set.color ? resolve(set.color) : undefined,
-        normal: set.normal ? resolve(set.normal) : undefined,
-        rough: set.rough ? resolve(set.rough) : undefined,
-      };
+  let reason = '';
+  // Один повтор: на холодном старте первый запрос иногда срывается,
+  // и витрина остаётся на процедурке до перезагрузки
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), 6000);
+    try {
+      const response = await fetch(manifestUrl, { cache: 'force-cache', signal: abort.signal });
+      if (!response.ok) {
+        reason = `манифест ${response.status}`;
+        break;
+      }
+      const manifest = (await response.json()) as { base?: string; sets?: Record<string, PackSource> };
+      if (!manifest.sets) {
+        reason = 'в манифесте нет наборов';
+        break;
+      }
+      const root = new URL(manifest.base ?? '', new URL(manifestUrl, window.location.href));
+      const resolve = (path: string): string => new URL(path, root).href;
+      const sources: Partial<Record<(typeof PACK_SETS)[number], PackSource>> = {};
+      for (const name of PACK_SETS) {
+        const set = manifest.sets[name];
+        if (!set) continue;
+        sources[name] = {
+          color: set.color ? resolve(set.color) : undefined,
+          normal: set.normal ? resolve(set.normal) : undefined,
+          rough: set.rough ? resolve(set.rough) : undefined,
+        };
+      }
+      const pack = await buildPack(sources, anisotropy);
+      if (pack) return pack;
+      reason = 'ни одна карта не загрузилась';
+    } catch (error) {
+      reason = String(error);
+    } finally {
+      clearTimeout(timer);
     }
-    return await buildPack(sources, anisotropy);
-  } catch {
-    return null;
+    await new Promise((done) => setTimeout(done, 300));
   }
+  if (reason) console.warn(`[texture-pack] процедурка: ${reason}`);
+  return null;
 }
 
 /** Пак уже загружен к моменту сборки? Тогда берём его, иначе процедурка. */
