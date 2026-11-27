@@ -104,12 +104,11 @@ export type PetalFanOptions = {
   width: number;
   tilt?: number;
   petalMat: THREE.Material;
-  ribMat: THREE.Material;
 };
 
 /** Парус Лиги: свисает с реи сплошным полотном, чуть заваливаясь назад. */
 export function addPetalFan(root: THREE.Group, opts: PetalFanOptions): THREE.Group {
-  const { z, y, count = 4, span = 1.5, length, width, tilt = -0.2, petalMat, ribMat } = opts;
+  const { z, y, count = 4, span = 1.5, length, width, tilt = -0.2, petalMat } = opts;
   const fan = new THREE.Group();
   fan.position.set(0, y, z);
   fan.rotation.x = tilt;
@@ -123,11 +122,8 @@ export function addPetalFan(root: THREE.Group, opts: PetalFanOptions): THREE.Gro
   const seamMat = new THREE.MeshStandardMaterial({ color: 0x4a3418, metalness: 0.3, roughness: 0.62 });
   for (const g of seams) fan.add(new THREE.Mesh(g, seamMat));
 
-  // Рея под полотном: держит верх паруса
-  const yard = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, totalW, 8), ribMat);
-  yard.rotation.z = Math.PI / 2;
-  yard.position.y = 0.03;
-  fan.add(yard);
+  // Рею держит сборка корпуса: одна широкая на мачту, парус висит ровно с неё.
+  // Своя короткая рея внутри полотна давала второй, торчащий из паруса, прут.
 
   root.add(fan);
   return fan;

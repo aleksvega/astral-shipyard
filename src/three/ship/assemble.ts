@@ -102,7 +102,8 @@ export function assembleShip(parts: PlayerShipParts, spec: ShipSpec): ShipFrame 
 
     const yard = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, m.width * 3.0, 8), spec.goldMat);
     yard.rotation.z = Math.PI / 2;
-    yard.position.set(0, baseY + m.fanY - 0.08, m.z);
+    // Верх полотна начинается в origin веера, поэтому рея садится ровно туда
+    yard.position.set(0, baseY + m.fanY, m.z);
     root.add(yard);
 
     const fan = addPetalFan(root, {
@@ -113,7 +114,6 @@ export function assembleShip(parts: PlayerShipParts, spec: ShipSpec): ShipFrame 
       length: m.length,
       width: m.width,
       petalMat: spec.sailMat,
-      ribMat: spec.goldMat,
     });
     // Паруса анимируются построчно: updateVisuals качает каждое полотно
     fan.traverse((child) => {
