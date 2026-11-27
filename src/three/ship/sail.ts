@@ -117,7 +117,9 @@ export function addPetalFan(root: THREE.Group, opts: PetalFanOptions): THREE.Gro
   const panels = Math.max(3, count);
   const { sail, seams } = sailGeometry(totalW, length, panels, totalW * 0.2);
 
-  fan.add(new THREE.Mesh(sail, petalMat));
+  const cloth = new THREE.Mesh(sail, petalMat);
+  cloth.name = 'sail:petal';
+  fan.add(cloth);
   // Швы отдельным металлом, но в тон полотну: латунь не должна выбиваться в полосы
   const seamMat = new THREE.MeshStandardMaterial({ color: 0x4a3418, metalness: 0.3, roughness: 0.62 });
   for (const g of seams) fan.add(new THREE.Mesh(g, seamMat));
@@ -127,4 +129,79 @@ export function addPetalFan(root: THREE.Group, opts: PetalFanOptions): THREE.Gro
 
   root.add(fan);
   return fan;
+}
+
+/** Прямой парус Империи: прямоугольное полотно под реей, ярусами. */
+export function addSquareRig(root: THREE.Group, opts: {
+  z: number;
+  y: number;
+  length: number;
+  width: number;
+  tiers?: number;
+  panels?: number;
+  petalMat: THREE.Material;
+  ribMat: THREE.Material;
+}): THREE.Group {
+  const { z, y, length, width, tiers = 1, panels = 4, petalMat, ribMat } = opts;
+  const group = new THREE.Group();
+  group.position.set(0, y, z);
+  const tierH = length / tiers;
+
+  for (let tier = 0; tier < tiers; tier++) {
+    const top = -tier * tierH;
+    const h = tierH * 0.92;
+    const nx = panels * 8;
+    const ny = 10;
+    const pos: number[] = [];
+    const uv: number[] = [];
+    const indices: number[] = [];
+    for (let j = 0; j <= ny; j++) {
+      const v = j / ny;
+      // Прямой верх у реи, низ чуть шире — полотно не режется в трапецию
+      const widthAt = width * (1 + 0.07 * v);
+      for (let i = 0; i <= nx; i++) {
+        const u = i / nx;
+        const x = (u - 0.5) * widthAt;
+        const belly = Math.sin(Math.PI * u) * Math.sin(Math.PI * v);
+        const scallop = v > 0.86 ? Math.cos(2 * Math.PI * u * panels) * h * 0.03 * ((v - 0.86) / 0.14) : 0;
+        pos.push(x, top - h * v + scallop, belly * 0.16);
+        uv.push(u, 1 - v);
+      }
+    }
+    for (let j = 0; j < ny; j++) {
+      for (let i = 0; i < nx; i++) {
+        const a = j * (nx + 1) + i;
+        const b = a + 1;
+        const c = a + nx + 1;
+        const d = c + 1;
+        indices.push(a, c, b, b, c, d);
+      }
+    }
+    const cloth = new THREE.BufferGeometry();
+    cloth.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    cloth.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    cloth.setIndex(indices);
+    cloth.computeVertexNormals();
+    const mesh = new THREE.Mesh(cloth, petalMat);
+    mesh.name = 'sail:square';
+    group.add(mesh);
+
+    // Нижняя рея: держит подошву полотна, иначе прямой парус читается флагом
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, width * 1.02, 6), ribMat);
+    foot.rotation.z = Math.PI / 2;
+    foot.position.y = top - h;
+    foot.name = 'square-sail-foot';
+    group.add(foot);
+
+    // Вертикальные стропы по стыкам полотнищ
+    for (let k = 1; k < panels; k++) {
+      const u = k / panels;
+      const strap = new THREE.Mesh(new THREE.BoxGeometry(0.03, h * 0.92, 0.05), ribMat);
+      strap.position.set((u - 0.5) * width, top - h * 0.46, 0.16 * Math.sin(Math.PI * u) * 0.6);
+      group.add(strap);
+    }
+  }
+
+  root.add(group);
+  return group;
 }

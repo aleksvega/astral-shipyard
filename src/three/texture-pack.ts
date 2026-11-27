@@ -30,8 +30,10 @@ export const PACK_SETS = ['plates', 'wood', 'metal'] as const;
 
 function loadTexture(url: string, srgb: boolean, anisotropy: number): Promise<THREE.Texture> {
   return new Promise((resolve, reject) => {
-    // Без таймаута битый или медленный файл держит всю сцену на процедурке молча
-    const timer = setTimeout(() => reject(new Error(`таймаут текстуры ${url}`)), 8000);
+    // Без таймаута битый или медленный файл держит всю сцену на процедурке молча.
+    // 30 с: витрина генерирует 20 бортов синхронно и блокирует главный поток —
+    // таймер срабатывает по стенным часам, когда сеть уже ответила.
+    const timer = setTimeout(() => reject(new Error(`таймаут текстуры ${url}`)), 30000);
     new THREE.TextureLoader().load(
       url,
       (texture) => {
@@ -88,7 +90,7 @@ export async function loadTexturePack(
   // и витрина остаётся на процедурке до перезагрузки
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const abort = new AbortController();
-    const timer = setTimeout(() => abort.abort(), 6000);
+    const timer = setTimeout(() => abort.abort(), 30000);
     try {
       const response = await fetch(manifestUrl, { cache: 'force-cache', signal: abort.signal });
       if (!response.ok) {

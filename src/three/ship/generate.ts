@@ -81,6 +81,13 @@ export function generateShip(opts: GenerateOptions): GeneratedShip {
     blueprint.sails === 'none' ||
     (blueprint.sails === undefined && style.sailPlans.every(([plan]) => plan === 'none'));
   const masts = noSails ? [] : layoutMasts(cls, profile, rng, blueprint.masts);
+  // Рангоут берём отдельным зерном: добавка не должна сдвигать подписи бортов
+  const rigRng = createRng(opts.seed ^ 0x9e3779b9);
+  const planWeights = style.sailPlans.filter(([plan]) => plan !== 'none');
+  const sailPlan =
+    blueprint.sails && blueprint.sails !== 'none'
+      ? blueprint.sails
+      : rigRng.pickWeighted(planWeights.length > 0 ? planWeights : [['petalFan', 1] as const]);
   const gunRows = (blueprint.gunRows ?? cls.gunRows) as 1 | 2;
   const partScale = profile.maxBeam / 1.95;
 
@@ -105,6 +112,7 @@ export function generateShip(opts: GenerateOptions): GeneratedShip {
     sailMat: mats.sail,
     goldMat: mats.trim,
     masts,
+    sailPlan,
     belly:
       style.id === 'league' && classId !== 'crab'
         ? {

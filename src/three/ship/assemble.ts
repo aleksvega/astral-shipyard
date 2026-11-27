@@ -3,7 +3,8 @@ import { buildHullDeck, buildLoftedHull, hullDeckY, hullHalfBeam, type HullProfi
 import { addBroadsideGuns, type PlayerShipParts } from './shared';
 import { addHullRails } from './decor';
 import { addRigging } from './rigging';
-import { addPetalFan } from './sail';
+import { addPetalFan, addSquareRig } from './sail';
+import type { SailPlan } from './style';
 
 /**
  * Спека корабля: числа и материалы, из которых собирается общий каркас.
@@ -44,6 +45,8 @@ export interface ShipSpec {
   bowTip?: [number, number, number];
   /** Парус: насколько широко раскрыт веер. */
   fanSpan?: number;
+  /** Рангоут школы: веер Лиги или прямые паруса Империи. */
+  sailPlan?: SailPlan;
 }
 
 export interface ShipFrame {
@@ -106,15 +109,26 @@ export function assembleShip(parts: PlayerShipParts, spec: ShipSpec): ShipFrame 
     yard.position.set(0, baseY + m.fanY, m.z);
     root.add(yard);
 
-    const fan = addPetalFan(root, {
-      z: m.z,
-      y: baseY + m.fanY,
-      count: m.count,
-      span: m.span ?? spec.fanSpan ?? 1.5,
-      length: m.length,
-      width: m.width,
-      petalMat: spec.sailMat,
-    });
+    const square = spec.sailPlan === 'squareRig';
+    const fan = square
+      ? addSquareRig(root, {
+          z: m.z,
+          y: baseY + m.fanY,
+          length: m.length,
+          width: m.width * 2.2,
+          tiers: m.length > 1.7 ? 2 : 1,
+          petalMat: spec.sailMat,
+          ribMat: spec.goldMat,
+        })
+      : addPetalFan(root, {
+          z: m.z,
+          y: baseY + m.fanY,
+          count: m.count,
+          span: m.span ?? spec.fanSpan ?? 1.5,
+          length: m.length,
+          width: m.width,
+          petalMat: spec.sailMat,
+        });
     // Паруса анимируются построчно: updateVisuals качает каждое полотно
     fan.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) parts.sails.push(child as THREE.Mesh);
