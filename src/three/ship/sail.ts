@@ -1,60 +1,33 @@
 import * as THREE from 'three';
 
 /**
- * Парус Лиги: одно сплошное полотно на всю ширину реи, с общим пузом от ветра,
- * мягкой волной, подгибом нижней кромки и канавками швов, в которые уложена
- * латунная лента. Отдельный модуль, чтобы декор корабля оставался обозримым.
+ * Паруса. В оригинале это не ткань под ветром, а перепонки-накопители: светлое
+ * полотно на тёмных рёбрах, как крыло. Поэтому Лига получает веер клинков с
+ * ребром по кромке, Империя — прямые полотна с нижней реей.
  */
 
-function sailGeometry(
-  totalW: number,
-  length: number,
-  panels: number,
-  billow: number,
-): { sail: THREE.BufferGeometry; seams: THREE.BufferGeometry[] } {
-  const nx = panels * 14;
-  const ny = 16;
+/** Один клинок: широкий у реи, сужается к скруглённому концу, с пузом. */
+function bladeGeometry(width: number, height: number, bend: number): THREE.BufferGeometry {
+  const nx = 12;
+  const ny = 18;
   const pos: number[] = [];
   const uv: number[] = [];
   const indices: number[] = [];
-  const seamU: number[] = [];
-  for (let k = 1; k < panels; k++) seamU.push(k / panels);
-
-  const dip = (u: number) => {
-    let d = 0;
-    for (const c of seamU) {
-      const t = Math.abs(u - c) / 0.013;
-      if (t < 3) d -= 0.032 * Math.exp(-t * t);
-    }
-    return d;
-  };
-
-  const rows: THREE.Vector3[][] = [];
-
   for (let j = 0; j <= ny; j++) {
     const v = j / ny;
-    const widthAt = totalW * (0.8 + 0.2 * v);
-    const hemFold = v > 0.93 ? (v - 0.93) / 0.07 : 0;
-    const row: THREE.Vector3[] = [];
+    // Профиль крыла: у реи во всю ширину, к концу сходит до половины
+    const halfW = (width / 2) * (1 - 0.5 * Math.pow(v, 1.7));
     for (let i = 0; i <= nx; i++) {
       const u = i / nx;
-      const x = (u - 0.5) * widthAt;
-      const lobe = Math.cos(2 * Math.PI * u * panels);
-      const scallop = v > 0.88 ? lobe * length * 0.035 * ((v - 0.88) / 0.12) : 0;
-      const y = -length * v + scallop;
-      const z =
-        billow * Math.sin(Math.PI * u) * Math.sin(Math.PI * Math.min(1, v * 1.04)) +
-        dip(u) -
-        hemFold * billow * 0.8 +
-        0.03 * Math.sin(7 * Math.PI * u) * v +
-        0.012 * Math.sin(13 * Math.PI * u) * v * v;
-      pos.push(x, y, z);
+      const x = (u - 0.5) * 2 * halfW;
+      // Углы подошвы подняты: без этого кончик клинка выходит срезанным пилой
+      const corner = (u - 0.5) * (u - 0.5) * height * 0.18 * v * v;
+      const y = -height * v + corner;
+      const belly = Math.sin(Math.PI * u) * Math.sin(Math.PI * Math.min(1, v * 1.15));
+      pos.push(x + bend * v * v, y, belly * width * 0.16);
       uv.push(u, 1 - v);
-      if (i % (nx / panels) === 0) row.push(new THREE.Vector3(x, y, z));
     }
-    rows.push(row);
   }
-
   for (let j = 0; j < ny; j++) {
     for (let i = 0; i < nx; i++) {
       const a = j * (nx + 1) + i;
@@ -64,35 +37,12 @@ function sailGeometry(
       indices.push(a, c, b, b, c, d);
     }
   }
-
-  const sail = new THREE.BufferGeometry();
-  sail.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  sail.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-  sail.setIndex(indices);
-  sail.computeVertexNormals();
-
-  // Латунные ленты в канавках швов: узкая полоска по центру каждого стыка
-  const seams: THREE.BufferGeometry[] = [];
-  for (let k = 1; k < panels; k++) {
-    const sp: number[] = [];
-    const si: number[] = [];
-    for (let j = 0; j <= ny; j++) {
-      const c = rows[j][k];
-      sp.push(c.x - 0.085, c.y, c.z + 0.02);
-      sp.push(c.x + 0.085, c.y, c.z + 0.02);
-      if (j < ny) {
-        const a = j * 2;
-        si.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
-      }
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
-    g.setIndex(si);
-    g.computeVertexNormals();
-    seams.push(g);
-  }
-
-  return { sail, seams };
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(indices);
+  g.computeVertexNormals();
+  return g;
 }
 
 export type PetalFanOptions = {
@@ -104,34 +54,50 @@ export type PetalFanOptions = {
   width: number;
   tilt?: number;
   petalMat: THREE.Material;
+  /** Тёмное ребро по кромке: без него перепонка читается простынёй. */
+  ribMat?: THREE.Material;
 };
 
-/** Парус Лиги: свисает с реи сплошным полотном, чуть заваливаясь назад. */
+/** Парус Лиги: веер клинков под общей реей, концы расходятся книзу. */
 export function addPetalFan(root: THREE.Group, opts: PetalFanOptions): THREE.Group {
-  const { z, y, count = 4, span = 1.5, length, width, tilt = -0.2, petalMat } = opts;
+  const { z, y, count = 4, span = 1.5, length, width, tilt = -0.2, petalMat, ribMat } = opts;
   const fan = new THREE.Group();
   fan.position.set(0, y, z);
   fan.rotation.x = tilt;
 
-  const totalW = width * (0.9 + span * 0.8);
-  const panels = Math.max(3, count);
-  const { sail, seams } = sailGeometry(totalW, length, panels, totalW * 0.2);
+  const blades = Math.max(3, count);
+  // Шаг чуть меньше ширины клинка: соседние перепонки перекрываются на палец,
+  // а не сливаются в сплошную белую стену
+  const pitch = width * (0.62 + span * 0.07);
+  const rib =
+    ribMat ?? new THREE.MeshStandardMaterial({ color: 0x3b2a17, metalness: 0.35, roughness: 0.55 });
 
-  const cloth = new THREE.Mesh(sail, petalMat);
-  cloth.name = 'sail:petal';
-  fan.add(cloth);
-  // Швы отдельным металлом, но в тон полотну: латунь не должна выбиваться в полосы
-  const seamMat = new THREE.MeshStandardMaterial({ color: 0x4a3418, metalness: 0.3, roughness: 0.62 });
-  for (const g of seams) fan.add(new THREE.Mesh(g, seamMat));
+  for (let i = 0; i < blades; i++) {
+    const off = i - (blades - 1) / 2;
+    const lean = off / Math.max(1, (blades - 1) / 2);
+    // Крайние клинки короче и сильнее завалены наружу — веер, а не частокол
+    const h = length * (1 - 0.14 * Math.abs(lean));
+    const w = width * 1.05;
+    const blade = new THREE.Mesh(bladeGeometry(w, h, lean * 0.22), petalMat);
+    blade.name = 'sail:petal';
+    blade.position.set(off * pitch, 0, 0);
+    blade.rotation.y = lean * 0.16;
+    blade.rotation.z = lean * 0.1;
+    fan.add(blade);
 
-  // Рею держит сборка корпуса: одна широкая на мачту, парус висит ровно с неё.
-  // Своя короткая рея внутри полотна давала второй, торчащий из паруса, прут.
+    // Ребро по наружной кромке клинка
+    const edge = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.012, h * 0.98, 5), rib);
+    edge.position.set(off * pitch - (w / 2) * 0.92, -h * 0.5, 0.02);
+    edge.rotation.z = -lean * 0.1;
+    edge.name = 'sail:rib';
+    fan.add(edge);
+  }
 
   root.add(fan);
   return fan;
 }
 
-/** Прямой парус Империи: прямоугольное полотно под реей, ярусами. */
+/** Прямой парус Империи: полотно под реей, ярусами, с нижней реей. */
 export function addSquareRig(root: THREE.Group, opts: {
   z: number;
   y: number;
@@ -149,22 +115,23 @@ export function addSquareRig(root: THREE.Group, opts: {
 
   for (let tier = 0; tier < tiers; tier++) {
     const top = -tier * tierH;
-    const h = tierH * 0.92;
+    const h = tierH * 0.96;
     const nx = panels * 8;
-    const ny = 10;
+    const ny = 12;
     const pos: number[] = [];
     const uv: number[] = [];
     const indices: number[] = [];
     for (let j = 0; j <= ny; j++) {
       const v = j / ny;
-      // Прямой верх у реи, низ чуть шире — полотно не режется в трапецию
-      const widthAt = width * (1 + 0.07 * v);
+      // Прямой верх у реи, низ шире — трапеция, иначе полотно висит простынёй
+      const widthAt = width * (1 + 0.16 * v);
       for (let i = 0; i <= nx; i++) {
         const u = i / nx;
         const x = (u - 0.5) * widthAt;
         const belly = Math.sin(Math.PI * u) * Math.sin(Math.PI * v);
-        const scallop = v > 0.86 ? Math.cos(2 * Math.PI * u * panels) * h * 0.03 * ((v - 0.86) / 0.14) : 0;
-        pos.push(x, top - h * v + scallop, belly * 0.16);
+        const footArc = v > 0.9 ? (v - 0.9) / 0.1 : 0;
+        const y = top - h * v + footArc * footArc * h * 0.12;
+        pos.push(x, y, belly * width * 0.14);
         uv.push(u, 1 - v);
       }
     }
@@ -196,8 +163,9 @@ export function addSquareRig(root: THREE.Group, opts: {
     // Вертикальные стропы по стыкам полотнищ
     for (let k = 1; k < panels; k++) {
       const u = k / panels;
-      const strap = new THREE.Mesh(new THREE.BoxGeometry(0.03, h * 0.92, 0.05), ribMat);
-      strap.position.set((u - 0.5) * width, top - h * 0.46, 0.16 * Math.sin(Math.PI * u) * 0.6);
+      const strap = new THREE.Mesh(new THREE.BoxGeometry(0.028, h * 0.9, 0.04), ribMat);
+      strap.position.set((u - 0.5) * width, top - h * 0.45, 0.02);
+      strap.name = 'sail:strap';
       group.add(strap);
     }
   }

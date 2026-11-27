@@ -13,11 +13,13 @@ export function makeMaterials(style: ShipStyle, textures: ProceduralTextureSet):
   // кость Гоблинов. Палитра поверх неё только перекрашивает канал.
   const hull =
     style.hullTexture === 'scrap'
-      ? { map: textures.orkScrapMap, normal: surfaces.scrapNormal, rough: surfaces.scrapRough, metalness: 0.62, emissive: 0x000000, emissiveIntensity: 0 }
+      ? { map: textures.orkScrapMap, normal: surfaces.scrapNormal, rough: surfaces.scrapRough, metalness: 0.24, emissive: 0x000000, emissiveIntensity: 0 }
       : style.hullTexture === 'bone'
         ? { map: textures.goblinBoneMap, normal: surfaces.boneNormal, rough: surfaces.boneRough, metalness: 0.08, emissive: 0x000000, emissiveIntensity: 0 }
         : steel
-          ? { map: textures.empireSteelMap, normal: surfaces.steelNormal, rough: surfaces.steelRough, metalness: 0.75, emissive: 0x35506b, emissiveIntensity: 0.9 }
+          // Металличность низкая: у металла нет диффузного света, и на тёмном
+          // окружении сталь читалась чёрной плитой вместо обшивки
+          ? { map: textures.empireSteelMap, normal: surfaces.steelNormal, rough: surfaces.steelRough, metalness: 0.22, emissive: 0x161f2a, emissiveIntensity: 0.34 }
           : { map: textures.leagueLacquerMap, normal: surfaces.lacquerNormal, rough: surfaces.lacquerRough, metalness: 0.15, emissive: 0x000000, emissiveIntensity: 0 };
 
   return {
@@ -65,12 +67,15 @@ export function makeMaterials(style: ShipStyle, textures: ProceduralTextureSet):
     sail: new THREE.MeshPhysicalMaterial({
       color: style.sailColor,
       emissive: style.sailEmissive,
-      emissiveIntensity: 0.28,
-      roughness: 0.72,
+      // Перепонка-накопитель: светится изнутри и слегка просвечивает
+      emissiveIntensity: 0.26,
+      roughness: 0.62,
       metalness: 0.02,
-      sheen: 0.24,
-      sheenColor: new THREE.Color(style.sailColor).offsetHSL(0.04, 0.05, 0.12),
-      sheenRoughness: 0.7,
+      sheen: 0.38,
+      sheenColor: new THREE.Color(style.sailColor).offsetHSL(0.02, 0.12, 0.18),
+      sheenRoughness: 0.6,
+      transparent: true,
+      opacity: 0.93,
       side: THREE.DoubleSide,
     }),
     glass: new THREE.MeshStandardMaterial({
@@ -87,7 +92,9 @@ export function makeMaterials(style: ShipStyle, textures: ProceduralTextureSet):
       roughness: 0.45,
       metalness: 0.1,
     }),
-    dark: new THREE.MeshStandardMaterial({ color: 0x2b303c, roughness: 0.5, metalness: 0.65 }),
+    // Тёмный металл надстроек и бронепояса: металличность ниже 0.3, иначе
+    // плиты читаются чёрными ящиками без единого блика
+    dark: new THREE.MeshStandardMaterial({ color: 0x4e5866, roughness: 0.55, metalness: 0.2 }),
     lamp: new THREE.MeshStandardMaterial({
       color: 0xffc978,
       emissive: 0x9a5a12,

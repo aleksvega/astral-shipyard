@@ -68,17 +68,17 @@ export function createProceduralTextures(
 
   // 2. Empire riveted dark iron & brass hull plates
   const [steelC, steelCtx] = createCanvas(256);
-  steelCtx.fillStyle = '#373e4d';
+  steelCtx.fillStyle = '#8a97a8';
   steelCtx.fillRect(0, 0, 256, 256);
   for (let y = 0; y < 256; y += 64) {
     for (let x = 0; x < 256; x += 64) {
-      steelCtx.fillStyle = (x + y) % 128 === 0 ? '#3f4758' : '#313745';
+      steelCtx.fillStyle = (x + y) % 128 === 0 ? '#96a3b4' : '#7d8a9b';
       steelCtx.fillRect(x + 2, y + 2, 60, 60);
-      steelCtx.strokeStyle = '#1b202b';
+      steelCtx.strokeStyle = '#414956';
       steelCtx.lineWidth = 2;
       steelCtx.strokeRect(x + 1, y + 1, 62, 62);
       // Brass rivets
-      steelCtx.fillStyle = '#a88446';
+      steelCtx.fillStyle = '#d8b46a';
       const pts = [
         [x + 8, y + 8],
         [x + 56, y + 8],
@@ -346,7 +346,9 @@ export function createProceduralTextures(
   return {
     leagueWoodMap: pack?.wood?.color ?? leagueWoodMap,
     leagueWoodBump,
-    empireSteelMap: pack?.plates?.color ?? empireSteelMap,
+    // Плиты пака — тёмный скан (средняя яркость 62 из 255): сталь Империи
+    // с ними уходила в чёрную плиту, поэтому цвет берём свой, рельеф — из пака
+    empireSteelMap,
     empireSteelBump,
     astralSailMap,
     allodRockMap,
@@ -385,7 +387,7 @@ export function applyPackToMaterials(
     const standard = material as THREE.MeshStandardMaterial;
     if (!standard.isMeshStandardMaterial || !standard.map) return;
     if (standard.map === textures.empireSteelMap && pack.plates) {
-      if (pack.plates.color) standard.map = pack.plates.color;
+      // Цвет не подменяем: скан плит тёмный и гасит сталь до чёрного
       if (pack.plates.normal) standard.normalMap = pack.plates.normal;
       if (pack.plates.rough) standard.roughnessMap = pack.plates.rough;
     } else if (standard.map === textures.leagueWoodMap && pack.wood) {

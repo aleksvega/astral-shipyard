@@ -112,9 +112,10 @@ export function assembleShip(parts: PlayerShipParts, spec: ShipSpec): ShipFrame 
     const square = spec.sailPlan === 'squareRig';
     const fan = square
       ? addSquareRig(root, {
-          z: m.z,
+          // Полотно за мачтой: иначе мачта идёт поверх паруса, как палка в окне
+          z: m.z - Math.max(0.22, m.width * 0.5),
           y: baseY + m.fanY,
-          length: m.length,
+          length: m.length * 0.86,
           width: m.width * 2.2,
           tiers: m.length > 1.7 ? 2 : 1,
           petalMat: spec.sailMat,
@@ -125,9 +126,10 @@ export function assembleShip(parts: PlayerShipParts, spec: ShipSpec): ShipFrame 
           y: baseY + m.fanY,
           count: m.count,
           span: m.span ?? spec.fanSpan ?? 1.5,
-          length: m.length,
+          length: m.length * 0.62,
           width: m.width,
           petalMat: spec.sailMat,
+          ribMat: spec.mastMat,
         });
     // Паруса анимируются построчно: updateVisuals качает каждое полотно
     fan.traverse((child) => {
