@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import type { ProceduralTextureSet } from '../textures';
 
 // Движок не зависит от игры: те же три союза объявлены здесь и в lib/game/types.
-// Меняешь один — поменяй второй, иначе борта и оружие разойдутся.
 export type BeamTypeId = 'rapid' | 'medium' | 'heavy';
 export type CannonFamilyId = 'astral' | 'rapid' | 'siege' | 'acid' | 'plasma';
 export type ShieldArc = 'bow' | 'stern' | 'port' | 'starboard';
@@ -86,12 +85,16 @@ export function addBroadsideGuns(
         const beam = surface ?? (opts?.beamAt ? opts.beamAt(cz) : 2.24);
 
         const port = new THREE.Mesh(portGeo, portMat);
-        port.position.set(side * (beam - 0.02), gunY - 0.12, cz);
+        port.name = 'gun-port';
+        // Порт и кант центруются по оси ствола: раньше стояли ниже, и ствол
+        // выходил над дырой
+        port.position.set(side * (beam - 0.02), gunY, cz);
         root.add(port);
 
         // Рамка порта: латунный кант вокруг ствола, иначе порт читается дырой
         const frame = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.62, 0.78), rimMat);
-        frame.position.set(side * (beam + 0.03), gunY - 0.1, cz);
+        frame.name = 'gun-port-frame';
+        frame.position.set(side * (beam + 0.03), gunY, cz);
         root.add(frame);
 
         const carriage = new THREE.Mesh(carriageGeo, carriageMat);
